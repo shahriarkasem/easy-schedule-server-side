@@ -24,13 +24,55 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
 
-    // user
+    // get all users
+    app.get("/users", async (req, res) => {
+      const query = {};
+      const users = userCollection.find(query);
+      const newUsers = await users.toArray();
+      res.send(newUsers);
+    });
+
+    // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
       console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
+
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update user
+    app.put("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedUser = req.body;
+      const query = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          name: updatedUser.name,
+          ages: updatedUser.ages,
+        },
+      };
+      const result = await userCollection.updateOne(query, updatedDoc, options);
+      res.send(result);
+    });
+
+    // delete user
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //------------ / --------------
   } finally {
   }
 }
