@@ -85,3 +85,74 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log("EasySchedule app is listening on port", port);
 });
+
+// front end server api
+
+/* 
+// GET ALL USERS API From Client Side
+useEffect(() => {
+    fetch("http://localhost:5000/users")
+      .then((res) => res.json())
+      .then((data) => setGet(data));
+  },[]);
+
+
+      // Post data
+
+      fetch("http://localhost:5000/users", {
+      method: "POST", or PUT
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(allData),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // const newData = [...get, data];
+        // setGet(newData);
+        console.log(data);
+        alert("user added successfully");
+        e.target.reset()
+      });
+
+     // DELETE API From Client Side
+
+      const handleDelete = (id) => {
+    console.log("i got your id", id);
+    fetch(`http://localhost:5000/users/${id}`, {
+      method: "DELETE",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.deletedCount > 0) {
+          const remaining = users.filter((user) => user._id !== id);
+          setUsers(remaining);
+          console.log(data);
+        }
+      });
+  };
+
+// update API from client side
+
+  const handleForm = (e) => {
+    e.preventDefault();
+    const name = e.target.name.value;
+    const ages = e.target.ages.value;
+    const address = e.target.address.value;
+    console.log(name, ages, address);
+    const allData = { name, ages, address };
+    fetch(`http://localhost:5000/users/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(allData),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        alert("user added successfully");
+        e.target.reset();
+      });
+  };
+*/
