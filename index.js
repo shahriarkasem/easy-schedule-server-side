@@ -27,6 +27,8 @@ async function run() {
   try {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
+    const eventCollectionOneOnOne = client.db("eventData").collection("eventOneOnOne");
+
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -43,6 +45,14 @@ async function run() {
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
+
+    // S user - create a new OneOnOne event api
+    app.post('/event/create/OneOnOne', async (req, res) => {
+      const newEvent = req.body;
+      const result = await eventCollectionOneOnOne.insertOne(newEvent);
+      res.send(result)
+    })
+
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
