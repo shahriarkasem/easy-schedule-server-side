@@ -45,8 +45,7 @@ async function run() {
   try {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
-    const eventCollectionOneOnOne = client.db("eventData").collection("eventOneOnOne");
-    const eventCollectionGroup = client.db("eventData").collection("group");
+    const eventCollection = client.db("eventData").collection("events");
 
     //AUTH(JWT)
     app.post('/login', async (req, res) => {
