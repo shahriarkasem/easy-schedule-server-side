@@ -45,8 +45,7 @@ async function run() {
   try {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
-    const eventCollectionOneOnOne = client.db("eventData").collection("eventOneOnOne");
-    const eventCollectionGroup = client.db("eventData").collection("group");
+    const eventCollection = client.db("eventData").collection("events");
 
     //AUTH(JWT)
     app.post('/login', async (req, res) => {
@@ -75,13 +74,20 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post('/event/create/OneOnOne', async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollectionOneOnOne.insertOne(newEvent);
+      const result = await eventCollection.insertOne(newEvent);
       res.send(result)
     })
     // S user - create a new group event api
     app.post('/event/create/group', async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollectionGroup.insertOne(newEvent);
+      const result = await eventCollection.insertOne(newEvent);
+      res.send(result)
+    })
+     // S user - get events api
+     app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
       res.send(result)
     })
 
