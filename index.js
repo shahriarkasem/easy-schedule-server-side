@@ -74,13 +74,13 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post('/event/create/OneOnOne', async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollectionOneOnOne.insertOne(newEvent);
+      const result = await eventCollection.insertOne(newEvent);
       res.send(result)
     })
     // S user - create a new group event api
     app.post('/event/create/group', async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollectionGroup.insertOne(newEvent);
+      const result = await eventCollection.insertOne(newEvent);
       res.send(result)
     })
      // S user - get events api
