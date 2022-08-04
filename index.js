@@ -84,6 +84,13 @@ async function run() {
       const result = await eventCollectionGroup.insertOne(newEvent);
       res.send(result)
     })
+     // S user - get events api
+     app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result)
+    })
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
