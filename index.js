@@ -7,6 +7,17 @@ const ObjectId = require("mongodb").ObjectId;
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
+
+//
+const server = require("http").createServer(app);
+
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*",
+    method: ["GET", "POST"],
+  },
+});
+
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -99,6 +110,24 @@ run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("EasySchedule server-side is working fine");
+});
+
+// socket- for video call
+
+io.on("connection", (socket) => {
+  socket.emit("me", socket.id);
+
+  socket.on("disconnect", () => {
+    socket.broadcast.emit("callended");
+  });
+
+  socket.on("calluser", ({ userToCall, signalData, from, name }) => {
+    io.to(userToCall).emit("calluser", { signal: signalData, from, name });
+  });
+
+  socket.on("answercall", (data) => {
+    io.to(data.to).emit("callaccepted", data.signal);
+  });
 });
 
 app.listen(port, () => {
