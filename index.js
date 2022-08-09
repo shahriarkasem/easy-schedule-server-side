@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
@@ -24,6 +25,23 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
+//VerifyJWT
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: 'unauthorized access' })
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: 'Forbidden access' });
+    }
+    console.log('decoded', decoded);
+    req.decoded = decoded;
+    next();
+  })
+}
+
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -38,6 +56,16 @@ async function run() {
   try {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
+    const eventCollection = client.db("eventData").collection("events");
+
+    //AUTH(JWT)
+    app.post('/login', async (req, res) => {
+      const user = req.body;
+      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '1d'
+      });
+      res.send({ accessToken });
+    })
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -52,6 +80,33 @@ async function run() {
       const newUser = req.body;
       console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
+      res.send(result);
+    });
+    // S user - create a new OneOnOne event api
+    app.post('/event/create/OneOnOne', async (req, res) => {
+      const newEvent = req.body;
+      const result = await eventCollection.insertOne(newEvent);
+      res.send(result)
+    })
+    // S user - create a new group event api
+    app.post('/event/create/group', async (req, res) => {
+      const newEvent = req.body;
+      const result = await eventCollection.insertOne(newEvent);
+      res.send(result)
+    })
+     // S user - get events api
+     app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result)
+    })
+
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
       res.send(result);
     });
 
@@ -86,6 +141,8 @@ async function run() {
       const result = await userCollection.deleteOne(query);
       res.send(result);
     });
+
+    //------------ / --------------
 
     // Payment
     app.post("/create-payment-intent", async (req, res) => {
