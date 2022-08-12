@@ -111,10 +111,13 @@ async function run() {
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
+    app.post("/", async (req, res) => {
+      const newUser = req.body;
+      res.send(result);
+    });
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
-
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       console.log("email sent");
