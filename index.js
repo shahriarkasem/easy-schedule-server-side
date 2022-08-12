@@ -47,7 +47,8 @@ function verifyJWT(req, res, next) {
 // confirmation email
 var emailSenderOptions = {
   auth: {
-    api_key: `${process.env.EMAIL_SENDER_KEY}`,
+    api_key:
+      "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",
   },
 };
 const EmailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
@@ -69,7 +70,6 @@ function SendConfirmEmail(newEvent) {
     }
   });
 }
-
 
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
