@@ -1,4 +1,6 @@
 const express = require("express");
+const app = express();
+const server = require("http").createServer(app);
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -7,10 +9,7 @@ const ObjectId = require("mongodb").ObjectId;
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-const app = express();
-
 //
-const server = require("http").createServer(app);
 
 const io = require("socket.io")(server, {
   cors: {
@@ -113,14 +112,6 @@ async function run() {
       res.send(result);
     });
 
-    // find specific user by user's id
-    app.get("/users/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const result = await userCollection.findOne(query);
-      res.send(result);
-    });
-
     // update user
     app.put("/users/:id", async (req, res) => {
       const id = req.params.id;
@@ -189,8 +180,8 @@ io.on("connection", (socket) => {
     io.to(data.to).emit("callaccepted", data.signal);
   });
 
-  socket.on("camMic", (camera, mic) => {
-    socket.broadcast.emit("camMic", camera, mic);
+  socket.on("cm", (camera, mic) => {
+    socket.broadcast.emit("cm", camera, mic);
   });
 });
 
