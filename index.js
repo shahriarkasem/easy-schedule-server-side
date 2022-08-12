@@ -5,6 +5,8 @@ const app = express();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 const port = process.env.PORT || 5000;
+const nodemailer = require("nodemailer");
+const sgTransport = require("nodemailer-sendgrid-transport");
 
 // middleware
 app.use(express.json());
