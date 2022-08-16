@@ -7,6 +7,9 @@ require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 
+var nodemailer = require("nodemailer");
+var sgTransport = require("nodemailer-sendgrid-transport");
+
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 //
@@ -40,6 +43,33 @@ function verifyJWT(req, res, next) {
     next();
   });
 }
+
+// confirmation email
+var emailSenderOptions = {
+  auth: {
+    api_key: `${process.env.EMAIL_SENDER_KEY}`,
+  },
+};
+const EmailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
+
+function SendConfirmEmail(newEvent) {
+  const { eventName, userEmail, eventDate, eventTime } = newEvent;
+  var email = {
+    from: "Easyschedule1@outlook.com",
+    to: userEmail,
+    subject: eventName,
+    text: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventTime} `,
+    html: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventDate} `,
+  };
+  EmailClient.sendMail(email, function (err, info) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Message sent: ", info);
+    }
+  });
+}
+
 
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
@@ -84,7 +114,10 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
+
       const result = await eventCollection.insertOne(newEvent);
+      SendConfirmEmail(newEvent);
+      console.log("email sent");
       res.send(result);
     });
     // S user - create a new group event api
@@ -101,6 +134,14 @@ async function run() {
         .find(query)
         .sort({ _id: -1 })
         .toArray();
+      res.send(result);
+    });
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection
+        .findOne(query)
       res.send(result);
     });
 
