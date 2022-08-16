@@ -136,6 +136,14 @@ async function run() {
         .toArray();
       res.send(result);
     });
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection
+        .findOne(query)
+      res.send(result);
+    });
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
