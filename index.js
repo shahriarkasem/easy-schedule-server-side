@@ -47,8 +47,7 @@ function verifyJWT(req, res, next) {
 // confirmation email
 var emailSenderOptions = {
   auth: {
-    api_key:
-      "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",
+    api_key: process.env.EMAIL_SENDER_KEY,
   },
 };
 const EmailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
