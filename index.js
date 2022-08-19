@@ -136,6 +136,17 @@ async function run() {
       res.send(result);
     });
 
+    // event with new person by tusar
+    app.get("/event/requestMeeting/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { personEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(result);
+    });
+
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
