@@ -148,10 +148,18 @@ async function run() {
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
       const result = await invitationEventCollection.insertOne(invitation);
-      console.log(invitation)
       res.send(result);
     });
-
+    //  // S user - get invitation invitationEventCollection
+    app.get("/event/invitation/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      console.log(query)
+      const result = await invitationEventCollection
+        .findOne(query);
+        console.log(result)
+      res.send(result);
+    });
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
