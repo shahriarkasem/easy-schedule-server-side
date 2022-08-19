@@ -86,6 +86,7 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
+    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
 
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
@@ -114,7 +115,6 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
-
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       console.log("email sent");
@@ -142,6 +142,22 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const result = await eventCollection
         .findOne(query)
+      res.send(result);
+    });
+    // S user - post invitation invitationEventCollection
+    app.post("/event/invitation", async (req, res) => {
+      const invitation = req.body;
+      const result = await invitationEventCollection.insertOne(invitation);
+      res.send(result);
+    });
+    //  // S user - get invitation invitationEventCollection
+    app.get("/event/invitation/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      console.log(query)
+      const result = await invitationEventCollection
+        .findOne(query);
+        console.log(result)
       res.send(result);
     });
 
