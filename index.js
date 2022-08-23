@@ -124,6 +124,39 @@ async function run() {
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollection.insertOne(newEvent);
+
+      res.send(result)
+    })
+    // S user - get events api
+    app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result)
+    })
+
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection
+        .findOne(query)
+      res.send(result);
+    });
+    // Scheduled Events - get Upcoming events api
+    app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result)
+    })
+
+
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
       res.send(result);
     });
     // S user - get events api
@@ -134,6 +167,7 @@ async function run() {
         .find(query)
         .sort({ _id: -1 })
         .toArray();
+
       res.send(result);
     });
     // S user - get event api
@@ -155,11 +189,19 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       console.log(query)
-      const result = await invitationEventCollection
-        .findOne(query);
-        console.log(result)
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result)
       res.send(result);
     });
+
+    // All User-get invitation invitationEventCollection
+
+    app.get("/event/invited/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await invitationEventCollection.find(query).toArray();
+      res.send(result);
+    })
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
