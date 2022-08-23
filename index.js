@@ -1,13 +1,23 @@
 const express = require("express");
+const app = express();
+const server = require("http").createServer(app);
 const cors = require("cors");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-const app = express();
+//
+
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*",
+    method: ["GET", "POST"],
+  },
+});
+
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -18,17 +28,17 @@ app.use(cors());
 function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(401).send({ message: 'unauthorized access' })
+    return res.status(401).send({ message: "unauthorized access" });
   }
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).send({ message: 'Forbidden access' });
+      return res.status(403).send({ message: "Forbidden access" });
     }
-    console.log('decoded', decoded);
+    console.log("decoded", decoded);
     req.decoded = decoded;
     next();
-  })
+  });
 }
 
 // mongoDB user information
@@ -48,13 +58,13 @@ async function run() {
     const eventCollection = client.db("eventData").collection("events");
 
     //AUTH(JWT)
-    app.post('/login', async (req, res) => {
+    app.post("/login", async (req, res) => {
       const user = req.body;
       const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '1d'
+        expiresIn: "1d",
       });
       res.send({ accessToken });
-    })
+    });
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -72,15 +82,16 @@ async function run() {
       res.send(result);
     });
     // S user - create a new OneOnOne event api
-    app.post('/event/create/OneOnOne', async (req, res) => {
+    app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollection.insertOne(newEvent);
-      res.send(result)
-    })
+      res.send(result);
+    });
     // S user - create a new group event api
-    app.post('/event/create/group', async (req, res) => {
+    app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollection.insertOne(newEvent);
+
       res.send(result)
     })
     // S user - get events api
@@ -113,6 +124,17 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    // S user - get events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+
       res.send(result);
     });
 
@@ -173,6 +195,28 @@ run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("EasySchedule server-side is working fine");
+});
+
+// socket- for video call
+
+io.on("connection", (socket) => {
+  socket.emit("me", socket.id);
+
+  socket.on("disconnect", () => {
+    socket.broadcast.emit("callended");
+  });
+
+  socket.on("calluser", ({ userToCall, signalData, from, name }) => {
+    io.to(userToCall).emit("calluser", { signal: signalData, from, name });
+  });
+
+  socket.on("answercall", (data) => {
+    io.to(data.to).emit("callaccepted", data.signal);
+  });
+
+  socket.on("cm", (camera, mic) => {
+    socket.broadcast.emit("cm", camera, mic);
+  });
 });
 
 app.listen(port, () => {
