@@ -189,11 +189,19 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       console.log(query)
-      const result = await invitationEventCollection
-        .findOne(query);
-        console.log(result)
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result)
       res.send(result);
     });
+
+    // All User-get invitation invitationEventCollection
+
+    app.get("/event/invited/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await invitationEventCollection.find(query).toArray();
+      res.send(result);
+    })
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
