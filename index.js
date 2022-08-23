@@ -85,7 +85,9 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
-    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
+    const invitationEventCollection = client
+      .db("invitationEvent")
+      .collection("invitation");
 
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
@@ -157,10 +159,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      console.log(query)
-      const result = await invitationEventCollection
-        .findOne(query);
-        console.log(result)
+      console.log(query);
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -169,6 +170,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
 
