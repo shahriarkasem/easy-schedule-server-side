@@ -55,6 +55,17 @@ async function run() {
       });
       res.send({ accessToken });
     })
+    //verify Admin
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.role === 'admin') {
+        next();
+      }
+      else {
+        res.status(403).send({ message: 'forbidden' });
+      }
+    }
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -62,6 +73,31 @@ async function run() {
       const users = userCollection.find(query);
       const newUsers = await users.toArray();
       res.send(newUsers);
+    });
+
+    app.get('/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === 'admin';
+      res.send({ admin: isAdmin })
+    })
+
+    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.role === 'admin') {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: 'admin' },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+      else {
+        res.status(403).send({ message: 'forbidden' });
+      }
+
     });
 
     // post user
@@ -74,17 +110,17 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post('/event/create/OneOnOne', async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollectionOneOnOne.insertOne(newEvent);
+      const result = await eventCollection.insertOne(newEvent);
       res.send(result)
     })
     // S user - create a new group event api
     app.post('/event/create/group', async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollectionGroup.insertOne(newEvent);
+      const result = await eventCollection.insertOne(newEvent);
       res.send(result)
     })
-     // S user - get events api
-     app.get('/event/group/:email', async (req, res) => {
+    // S user - get events api
+    app.get('/event/group/:email', async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
       const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
