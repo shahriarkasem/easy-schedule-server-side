@@ -41,7 +41,7 @@ function verifyJWT(req, res, next) {
     console.log("decoded", decoded);
     req.decoded = decoded;
     next();
-  });
+  })
 }
 
 // mongoDB user information
@@ -70,7 +70,7 @@ async function run() {
         expiresIn: "1d",
       });
       res.send({ accessToken });
-    });
+    })
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -78,6 +78,37 @@ async function run() {
       const users = userCollection.find(query);
       const newUsers = await users.toArray();
       res.send(newUsers);
+    });
+
+    // app.get('/admin/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const user = await userCollection.findOne({ email: email });
+    //   const isAdmin = user.role === 'admin';
+    //   res.send({ admin: isAdmin })
+    // })
+
+    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.role === 'admin') {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: 'admin' },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+      else {
+        res.status(403).send({ message: 'forbidden' });
+      }
+
+    });
+
+    //user schedule
+    app.get('/userSchedule', async (req, res) => {
+      const userSchedule = await eventCollection.find().toArray();
+      res.send(userSchedule);
     });
 
     // post user
@@ -91,18 +122,59 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
+<<<<<<< HEAD
       console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       res.send(result);
     });
 
+=======
+      const result = await eventCollectionOneOnOne.insertOne(newEvent);
+      res.send(result)
+    })
+>>>>>>> 5c109ebd68c788e7e6a5c993ffc10947f1dafcec
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
       console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
+<<<<<<< HEAD
       SendConfirmEmail(newEvent);
+=======
+      res.send(result)
+    })
+    // S user - get events api
+    app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result)
+    })
+
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection
+        .findOne(query)
+      res.send(result);
+    });
+    // Scheduled Events - get Upcoming events api
+    app.get('/event/group/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
+      res.send(result)
+    })
+
+
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
+>>>>>>> 5c109ebd68c788e7e6a5c993ffc10947f1dafcec
       res.send(result);
     });
     // S user - get events api
@@ -113,6 +185,7 @@ async function run() {
         .find(query)
         .sort({ _id: -1 })
         .toArray();
+
       res.send(result);
     });
 
@@ -143,9 +216,24 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
+<<<<<<< HEAD
       const result = await invitationEventCollection.findOne(query);
+=======
+      console.log(query)
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result)
+>>>>>>> 5c109ebd68c788e7e6a5c993ffc10947f1dafcec
       res.send(result);
     });
+
+    // All User-get invitation invitationEventCollection
+
+    app.get("/event/invited/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await invitationEventCollection.find(query).toArray();
+      res.send(result);
+    })
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
