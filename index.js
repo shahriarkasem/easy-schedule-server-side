@@ -78,14 +78,14 @@ async function run() {
       res.send(newUsers);
     });
 
-    app.get('/admin/:email', async (req, res) => {
-      const email = req.params.email;
-      const user = await userCollection.findOne({ email: email });
-      const isAdmin = user.role === 'admin';
-      res.send({ admin: isAdmin })
-    })
+    // app.get('/admin/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const user = await userCollection.findOne({ email: email });
+    //   const isAdmin = user.role === 'admin';
+    //   res.send({ admin: isAdmin })
+    // })
 
-    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({ email: requester });
@@ -101,6 +101,12 @@ async function run() {
         res.status(403).send({ message: 'forbidden' });
       }
 
+    });
+
+    //user schedule
+    app.get('/userSchedule', async (req, res) => {
+      const userSchedule = await eventCollection.find().toArray();
+      res.send(userSchedule);
     });
 
     // post user
