@@ -41,35 +41,8 @@ function verifyJWT(req, res, next) {
     console.log("decoded", decoded);
     req.decoded = decoded;
     next();
-  });
+  })
 }
-
-// confirmation email
-var emailSenderOptions = {
-  auth: {
-    api_key: `${process.env.EMAIL_SENDER_KEY}`,
-  },
-};
-const EmailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
-
-function SendConfirmEmail(newEvent) {
-  const { eventName, userEmail, eventDate, eventTime } = newEvent;
-  var email = {
-    from: "Easyschedule1@outlook.com",
-    to: userEmail,
-    subject: eventName,
-    text: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventTime} `,
-    html: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventDate} `,
-  };
-  EmailClient.sendMail(email, function (err, info) {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("Message sent: ", info);
-    }
-  });
-}
-
 
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
@@ -95,7 +68,7 @@ async function run() {
         expiresIn: "1d",
       });
       res.send({ accessToken });
-    });
+    })
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -103,6 +76,31 @@ async function run() {
       const users = userCollection.find(query);
       const newUsers = await users.toArray();
       res.send(newUsers);
+    });
+
+    app.get('/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === 'admin';
+      res.send({ admin: isAdmin })
+    })
+
+    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.role === 'admin') {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: 'admin' },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+      else {
+        res.status(403).send({ message: 'forbidden' });
+      }
+
     });
 
     // post user
@@ -115,16 +113,13 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
-      const result = await eventCollection.insertOne(newEvent);
-      SendConfirmEmail(newEvent);
-      console.log("email sent");
-      res.send(result);
-    });
+      const result = await eventCollectionOneOnOne.insertOne(newEvent);
+      res.send(result)
+    })
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollection.insertOne(newEvent);
-
       res.send(result)
     })
     // S user - get events api
