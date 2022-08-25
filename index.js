@@ -149,7 +149,7 @@ async function run() {
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
-      console.log(newEvent);
+      // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       res.send(result);
@@ -172,6 +172,18 @@ async function run() {
       const result = await eventCollection.findOne(query);
       res.send(result);
     });
+
+    // S user - update event api
+    app.patch('/update/event/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const filter = { _id: ObjectId(id)};
+      const updateDoc = {
+          $set: updatedData,
+      };
+      const result = await eventCollection.updateOne(filter, updateDoc)
+      res.send(result);
+  })
 
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
