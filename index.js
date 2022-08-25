@@ -44,14 +44,6 @@ function verifyJWT(req, res, next) {
   });
 }
 
-// confirmation email
-var emailSenderOptions = {
-  auth: {
-    api_key: `${process.env.EMAIL_SENDER_KEY}`,
-  },
-};
-const EmailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
-
 function SendConfirmEmail(newEvent) {
   const { eventName, userEmail, eventDate, eventTime } = newEvent;
   var email = {
@@ -106,6 +98,37 @@ async function run() {
       res.send(newUsers);
     });
 
+    // app.get('/admin/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const user = await userCollection.findOne({ email: email });
+    //   const isAdmin = user.role === 'admin';
+    //   res.send({ admin: isAdmin })
+    // })
+
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
+    });
+
+    //user schedule
+    app.get("/userSchedule", async (req, res) => {
+      const userSchedule = await eventCollection.find().toArray();
+      res.send(userSchedule);
+    });
+
     // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -113,18 +136,22 @@ async function run() {
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
+
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
+      console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
-      console.log("email sent");
       res.send(result);
     });
+
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
+      console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
+      SendConfirmEmail(newEvent);
       res.send(result);
     });
     // S user - get events api
@@ -137,6 +164,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
     // S user - get event api
     app.get("/event/single/:id", async (req, res) => {
       const id = req.params.id;
@@ -144,6 +172,7 @@ async function run() {
       const result = await eventCollection.findOne(query);
       res.send(result);
     });
+
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
@@ -157,6 +186,16 @@ async function run() {
       console.log(query);
       const result = await invitationEventCollection.findOne(query);
       console.log(result);
+    });
+    // Scheduled Events - get Upcoming events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+
       res.send(result);
     });
 
@@ -165,6 +204,73 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    // S user - get events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+
+      res.send(result);
+    });
+
+    // get data for notification
+    app.get("/event/invitation/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { emails: email };
+      const result = await invitationEventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(result);
+    });
+
+    // S user - post invitation invitationEventCollection
+    app.post("/event/invitation", async (req, res) => {
+      const invitation = req.body;
+      console.log(invitation?.emails);
+      const result = await invitationEventCollection.insertOne(invitation);
+      SendGuestEmail(
+        invitation?.finalData.userEvent,
+        invitation?.emails,
+        invitation?.finalData?.inviteTime
+      );
+      res.send(result);
+    });
+    //  // S user - get invitation invitationEventCollection
+    app.get("/event/invitation/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await invitationEventCollection.findOne(query);
+      console.log(query);
+      res.send(result);
+    });
+
+    // All User-get invitation invitationEventCollection
+
+    app.get("/event/invited/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await invitationEventCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
 
@@ -195,6 +301,7 @@ async function run() {
     //------------ / --------------
 
     // Payment
+
     // app.post("/create-payment-intent", async (req, res) => {
     //   const amount = req.body;
     //   console.log(amount);
@@ -245,3 +352,100 @@ io.on("connection", (socket) => {
 app.listen(port, () => {
   console.log("EasySchedule app is listening on port", port);
 });
+
+// nodemailer for user
+function SendConfirmEmail(newEvent) {
+  const {
+    eventName,
+    userName,
+    userEmail,
+    eventDate,
+    eventTime,
+    eventDuration,
+    description,
+    location,
+  } = newEvent;
+  const msg = {
+    from: "aatozz99@gmail.com",
+    to: "jabedhtusar@gmail.com",
+    subject: "Meeting Schedule",
+    text: "Meeting Schedule",
+    html: ` <h3> Hi ${userName} </h3>
+    <p>
+    We hope you’re doing well. You have created a meeting to discuss <b> ${eventName} </b>.
+    Hope you will enjoy your meeting time and it looks like <b> ${eventDate} </b> 
+    at <b> ${eventTime} </b>. Meeting at/on <b> ${location} </b>.
+    </p>
+    
+    Kind regards, 
+    <br>
+    Easy Schedule
+    </p>`,
+  };
+  nodemailer
+    .createTransport({
+      service: "gmail",
+      auth: {
+        user: "aatozz99@gmail.com",
+        pass: "olbozzxqlqxdngvy",
+      },
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("error ".err);
+      } else {
+        return console.log("email sent");
+      }
+    });
+}
+
+// nodemailer for guest
+function SendGuestEmail(invitation, emails, newInviteTime) {
+  const {
+    eventName,
+    userName,
+    userEmail,
+    eventDate,
+    eventTime,
+    eventDuration,
+    description,
+    location,
+  } = invitation;
+  const msg = {
+    from: "aatozz99@gmail.com",
+    to: `${emails}`,
+    subject: "Meeting Schedule",
+    text: "Meeting Schedule",
+    html: ` <h3> Hi there </h3>
+    <p>
+    I hope you’re doing well. It’s time for us to meet to discuss <b> ${eventName} </b>.
+    I looked at everyone’s availability on Easy Schedule, and it looks like <b> ${eventDate} </b> 
+    at <b> ${newInviteTime} </b> will work best for everyone. 
+    Let’s meet at/on <b> ${location} </b>.
+    </p>
+    <p>
+    We’ll need about ${eventDuration} min. In that time, we should be able to cover:
+    Please use <a href='https://easy-schedule-77cce.web.app/'>this link</a> to let me know whether you’ll be able to make it. 
+    I look forward to seeing you all.
+    <br>
+    Kind regards, 
+    <br>
+    ${userName},
+    </p>`,
+  };
+  nodemailer
+    .createTransport({
+      service: "gmail",
+      auth: {
+        user: "aatozz99@gmail.com",
+        pass: "olbozzxqlqxdngvy",
+      },
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("error ".err);
+      } else {
+        return console.log("email sent");
+      }
+    });
+}
