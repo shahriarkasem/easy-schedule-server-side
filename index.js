@@ -70,7 +70,6 @@ function SendConfirmEmail(newEvent) {
   });
 }
 
-
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -86,7 +85,9 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
-    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
+    const invitationEventCollection = client
+      .db("invitationEvent")
+      .collection("invitation");
 
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
@@ -140,8 +141,7 @@ async function run() {
     app.get("/event/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await eventCollection
-        .findOne(query)
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
     // S user - post invitation invitationEventCollection
@@ -154,10 +154,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      console.log(query)
-      const result = await invitationEventCollection
-        .findOne(query);
-        console.log(result)
+      console.log(query);
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -196,19 +195,20 @@ async function run() {
     //------------ / --------------
 
     // Payment
-    app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const totalPrice = service.totalPrice;
-      const amount = totalPrice * 100;
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
-        currency: "usd",
-        payment_method_types: ["card"],
-      });
-      res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
-    });
+    // app.post("/create-payment-intent", async (req, res) => {
+    //   const amount = req.body;
+    //   console.log(amount);
+
+    //   const total = amount * 100;
+    //   const paymentIntent = await stripe.paymentIntents.create({
+    //     amount: total,
+    //     currency: "usd",
+    //     payment_method_types: ["card"],
+    //   });
+    //   res.send({
+    //     clientSecret: paymentIntent.client_secret,
+    //   });
+    // });
 
     //------------ / --------------
   } finally {
@@ -245,74 +245,3 @@ io.on("connection", (socket) => {
 app.listen(port, () => {
   console.log("EasySchedule app is listening on port", port);
 });
-
-// front end server api
-
-/* 
-// GET ALL USERS API From Client Side
-useEffect(() => {
-    fetch("http://localhost:5000/users")
-      .then((res) => res.json())
-      .then((data) => setGet(data));
-  },[]);
-
-
-      // Post data
-
-      fetch("http://localhost:5000/users", {
-      method: "POST", or PUT
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(allData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        // const newData = [...get, data];
-        // setGet(newData);
-        console.log(data);
-        alert("user added successfully");
-        e.target.reset()
-      });
-
-     // DELETE API From Client Side
-
-      const handleDelete = (id) => {
-    console.log("i got your id", id);
-    fetch(`http://localhost:5000/users/${id}`, {
-      method: "DELETE",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.deletedCount > 0) {
-          const remaining = users.filter((user) => user._id !== id);
-          setUsers(remaining);
-          console.log(data);
-        }
-      });
-  };
-
-// update API from client side
-
-  const handleForm = (e) => {
-    e.preventDefault();
-    const name = e.target.name.value;
-    const ages = e.target.ages.value;
-    const address = e.target.address.value;
-    console.log(name, ages, address);
-    const allData = { name, ages, address };
-    fetch(`http://localhost:5000/users/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(allData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        alert("user added successfully");
-        e.target.reset();
-      });
-  };
-*/
