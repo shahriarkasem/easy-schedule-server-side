@@ -4,8 +4,8 @@ const server = require("http").createServer(app);
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-var moment = require('moment');
-moment().format();
+// var moment = require("moment");
+// moment().format();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 
@@ -67,22 +67,22 @@ async function run() {
       .collection("invitation");
 
     //AUTH(JWT)
-    app.post("/login", async (req, res) => {
-      const user = req.body;
-      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "1d",
+    //VerifyJWT
+    function verifyJWT(req, res, next) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      const token = authHeader.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(403).send({ message: "Forbidden access" });
+        }
+        console.log("decoded", decoded);
+        req.decoded = decoded;
+        next();
       });
-      res.send({ accessToken });
-    });
-
-    let check = moment('2010-10-20').isSameOrAfter('2010-10-19');
-    if (check = true) {
-      console.log('amaro porane jaha chay tumi tai tumi taigo amaro porane jaha chay');
     }
-    else {
-      console.log('kicchu thik nai sob ulta palta hoiya gechega');
-    }
-    console.log(check);
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -99,7 +99,7 @@ async function run() {
     //   res.send({ admin: isAdmin })
     // })
 
-    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({
@@ -123,7 +123,6 @@ async function run() {
       res.send(userSchedule);
     });
 
-
     // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -132,7 +131,6 @@ async function run() {
       res.send(result);
     });
 
-    
     //zoom meeting
     app.get("/schedule", async (req, res) => {
       const query = {};
@@ -277,7 +275,7 @@ async function run() {
 
     app.get("/event/invited/:email", async (req, res) => {
       const email = req.params.email;
-      const gest = 'check@gmail.com';
+      const gest = "check@gmail.com";
       const dat = "2022-08-10";
       const query = { userEmail: email };
 
