@@ -170,11 +170,16 @@ async function run() {
     });
 
     // S user - post invitation invitationEventCollection
-    app.post("/event/invitation", async (req, res) => {
-      const invitation = req.body;
-      const result = await invitationEventCollection.insertOne(invitation);
-      res.send(result);
-    });
+    // app.post("/event/invitation", async (req, res) => {
+    //   const invitation = req.body;
+    //   const result = await invitationEventCollection.insertOne(invitation);
+    //   SendGuestEmail(
+    //     invitation?.finalData.userEvent,
+    //     invitation?.emails,
+    //     invitation?.finalData?.inviteTime
+    //   );
+    //   res.send(result);
+    // });
     //  // S user - get invitation invitationEventCollection
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
@@ -231,13 +236,11 @@ async function run() {
       console.log(invitation);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
-        invitation?.finalData.userEvent,
+        invitation?.userEvent,
         invitation?.emails,
-        invitation?.finalData?.inviteTime
+        invitation?.inviteTime
       );
-
       res.send(result);
-      console.log(result);
     });
     //  // S user - get invitation invitationEventCollection
     app.get("/event/invitation/single/:id", async (req, res) => {
