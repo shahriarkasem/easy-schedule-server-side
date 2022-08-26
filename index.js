@@ -248,7 +248,7 @@ async function run() {
       console.log(invitation?.emails);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
-        invitation?.finalData?.userEvent,
+        invitation?.finalData.userEvent,
         invitation?.emails,
         invitation?.finalData?.inviteTime
       );
