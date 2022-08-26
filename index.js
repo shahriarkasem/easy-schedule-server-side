@@ -197,7 +197,7 @@ async function run() {
       const query = { _id: ObjectId(id) };
       console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      console.log(result);
+      res.send(result)
     });
     // Scheduled Events - get Upcoming events api
     app.get("/event/group/:email", async (req, res) => {
