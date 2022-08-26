@@ -64,6 +64,7 @@ async function run() {
       .db("invitationEvent")
       .collection("invitation");
 
+    const zoomCollection = client.db("zoomData").collection("schedules");
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
       const user = req.body;
@@ -120,6 +121,15 @@ async function run() {
       res.send(result);
     });
 
+    
+    //zoom meeting
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      const cursor = zoomCollection.find(query);
+      const schedules = await cursor.toArray();
+      res.send(schedules);
+    });
+
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
@@ -156,7 +166,6 @@ async function run() {
       const result = await eventCollection.findOne(query);
       res.send(result);
     });
-
     // S user - update event api
     app.patch("/update/event/:id", async (req, res) => {
       const id = req.params.id;
@@ -180,12 +189,14 @@ async function run() {
     //   );
     //   res.send(result);
     // });
+
     //  // S user - get invitation invitationEventCollection
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       console.log(query);
       const result = await invitationEventCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
     // Scheduled Events - get Upcoming events api
