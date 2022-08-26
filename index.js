@@ -294,7 +294,7 @@ async function run() {
       const dat = "2022-08-10";
       const query = { userEmail: email };
 
-      const result = await invitationEventCollection.find(query).toArray();
+      const result = await eventCollection.find(query).toArray();
       res.send(result);
     });
 
