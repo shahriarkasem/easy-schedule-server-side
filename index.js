@@ -44,24 +44,6 @@ function verifyJWT(req, res, next) {
   });
 }
 
-function SendConfirmEmail(newEvent) {
-  const { eventName, userEmail, eventDate, eventTime } = newEvent;
-  var email = {
-    from: "Easyschedule1@outlook.com",
-    to: userEmail,
-    subject: eventName,
-    text: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventTime} `,
-    html: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventDate} `,
-  };
-  EmailClient.sendMail(email, function (err, info) {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("Message sent: ", info);
-    }
-  });
-}
-
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -153,6 +135,7 @@ async function run() {
       // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
+      console.log(newEvent);
       res.send(result);
     });
     // S user - get events api
@@ -175,16 +158,16 @@ async function run() {
     });
 
     // S user - update event api
-    app.patch('/update/event/:id', async (req, res) => {
+    app.patch("/update/event/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
-      const filter = { _id: ObjectId(id)};
+      const filter = { _id: ObjectId(id) };
       const updateDoc = {
-          $set: updatedData,
+        $set: updatedData,
       };
-      const result = await eventCollection.updateOne(filter, updateDoc)
+      const result = await eventCollection.updateOne(filter, updateDoc);
       res.send(result);
-  })
+    });
 
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
@@ -198,7 +181,7 @@ async function run() {
       const query = { _id: ObjectId(id) };
       console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      res.send(result)
+      res.send(result);
     });
     // Scheduled Events - get Upcoming events api
     app.get("/event/group/:email", async (req, res) => {
@@ -245,14 +228,16 @@ async function run() {
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
-      console.log(invitation?.emails);
+      console.log(invitation);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
         invitation?.finalData.userEvent,
         invitation?.emails,
         invitation?.finalData?.inviteTime
       );
+
       res.send(result);
+      console.log(result);
     });
     //  // S user - get invitation invitationEventCollection
     app.get("/event/invitation/single/:id", async (req, res) => {
@@ -387,7 +372,7 @@ function SendConfirmEmail(newEvent) {
   } = newEvent;
   const msg = {
     from: "aatozz99@gmail.com",
-    to: "jabedhtusar@gmail.com",
+    to: `${newEvent?.userEmail}`,
     subject: "Meeting Schedule",
     text: "Meeting Schedule",
     html: ` <h3> Hi ${userName} </h3>
