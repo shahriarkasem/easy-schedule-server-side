@@ -79,11 +79,8 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
-    const invitationEventCollection = client
-      .db("invitationEvent")
-      .collection("invitation");
+    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
 
-    const zoomCollection = client.db("zoomData").collection("schedules");
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
       const user = req.body;
@@ -117,10 +114,7 @@ async function run() {
     //   res.send({ admin: isAdmin })
     // })
 
-
-
-
-    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({
