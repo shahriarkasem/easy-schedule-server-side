@@ -70,7 +70,6 @@ function SendConfirmEmail(newEvent) {
   });
 }
 
-
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -86,7 +85,10 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
-    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
+    const invitationEventCollection = client
+      .db("invitationEvent")
+      .collection("invitation");
+    const zoomCollection = client.db("zoomData").collection("schedules");
 
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
@@ -112,6 +114,15 @@ async function run() {
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
+
+    //zoom meeting
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      const cursor = zoomCollection.find(query);
+      const schedules = await cursor.toArray();
+      res.send(schedules);
+    });
+
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
@@ -140,8 +151,7 @@ async function run() {
     app.get("/event/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await eventCollection
-        .findOne(query)
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
     // S user - post invitation invitationEventCollection
@@ -154,10 +164,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      console.log(query)
-      const result = await invitationEventCollection
-        .findOne(query);
-        console.log(result)
+      console.log(query);
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
