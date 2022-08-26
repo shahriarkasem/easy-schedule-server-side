@@ -59,6 +59,7 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
+    const workflowCollection = client.db("workflows").collection("workflow");
     const invitationEventCollection = client
       .db("invitationEvent")
       .collection("invitation");
@@ -201,7 +202,7 @@ async function run() {
       console.log(invitation?.emails);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
-        invitation?.finalData.userEvent,
+        invitation?.finalData?.userEvent,
         invitation?.emails,
         invitation?.finalData?.inviteTime
       );
@@ -256,6 +257,13 @@ async function run() {
       res.send(result);
     });
 
+    // workflow
+    app.get("/workflow", async (req, res) => {
+      const query = {};
+      const users = workflowCollection.find(query);
+      const newUsers = await users.toArray();
+      res.send(newUsers);
+    });
     // delete user
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
