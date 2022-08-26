@@ -4,6 +4,8 @@ const server = require("http").createServer(app);
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+var moment = require('moment');
+moment().format();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 
@@ -91,6 +93,15 @@ async function run() {
       res.send({ accessToken });
     });
 
+    let check = moment('2010-10-20').isSameOrAfter('2010-10-19');
+    if (check = true) {
+      console.log('amaro porane jaha chay tumi tai tumi taigo amaro porane jaha chay');
+    }
+    else {
+      console.log('kicchu thik nai sob ulta palta hoiya gechega');
+    }
+    console.log(check);
+
     // get all users
     app.get("/users", async (req, res) => {
       const query = {};
@@ -105,6 +116,9 @@ async function run() {
     //   const isAdmin = user.role === 'admin';
     //   res.send({ admin: isAdmin })
     // })
+
+
+
 
     app.put("/user/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
@@ -129,6 +143,7 @@ async function run() {
       const userSchedule = await eventCollection.find().toArray();
       res.send(userSchedule);
     });
+
 
     // post user
     app.post("/users", async (req, res) => {
@@ -271,11 +286,14 @@ async function run() {
       res.send(result);
     });
 
-    // All User-get invitation invitationEventCollection
+    // Upcoming Events-get invitation invitationEventCollection
 
     app.get("/event/invited/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email };
+      const gest = 'check@gmail.com';
+      const dat = "2022-08-10";
+      const query = { userEmail: email };
+
       const result = await invitationEventCollection.find(query).toArray();
       res.send(result);
     });
