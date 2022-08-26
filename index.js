@@ -44,6 +44,24 @@ function verifyJWT(req, res, next) {
   });
 }
 
+function SendConfirmEmail(newEvent) {
+  const { eventName, userEmail, eventDate, eventTime } = newEvent;
+  var email = {
+    from: "Easyschedule1@outlook.com",
+    to: userEmail,
+    subject: eventName,
+    text: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventTime} `,
+    html: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventDate} `,
+  };
+  EmailClient.sendMail(email, function (err, info) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Message sent: ", info);
+    }
+  });
+}
+
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -132,7 +150,7 @@ async function run() {
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
-      console.log(newEvent);
+      // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       res.send(result);
@@ -155,6 +173,33 @@ async function run() {
       const result = await eventCollection.findOne(query);
       res.send(result);
     });
+
+    // S user - update event api
+    app.patch('/update/event/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const filter = { _id: ObjectId(id)};
+      const updateDoc = {
+          $set: updatedData,
+      };
+      const result = await eventCollection.updateOne(filter, updateDoc)
+      res.send(result);
+  })
+
+    // S user - post invitation invitationEventCollection
+    app.post("/event/invitation", async (req, res) => {
+      const invitation = req.body;
+      const result = await invitationEventCollection.insertOne(invitation);
+      res.send(result);
+    });
+    //  // S user - get invitation invitationEventCollection
+    app.get("/event/invitation/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      console.log(query);
+      const result = await invitationEventCollection.findOne(query);
+      res.send(result)
+    });
     // Scheduled Events - get Upcoming events api
     app.get("/event/group/:email", async (req, res) => {
       const email = req.params.email;
@@ -163,6 +208,7 @@ async function run() {
         .find(query)
         .sort({ _id: -1 })
         .toArray();
+
       res.send(result);
     });
 
@@ -275,16 +321,20 @@ async function run() {
     //------------ / --------------
 
     // Payment
+
     app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const totalPrice = service.totalPrice;
-      const amount = totalPrice * 100;
+      const { amount } = req.body;
+
+      const total = amount * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount: total,
         currency: "usd",
         payment_method_types: ["card"],
       });
-      res.send({ clientSecret: paymentIntent.client_secret });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
     });
 
     //------------ / --------------
