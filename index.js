@@ -80,11 +80,8 @@ async function run() {
     const invitationEventCollection = client
       .db("invitationEvent")
       .collection("invitation");
-<<<<<<< HEAD
-    const zoomCollection = client.db("zoomData").collection("schedules");
-=======
->>>>>>> c7c6fffe75b2d4a461e680d0d91acd5a5369120e
 
+    const zoomCollection = client.db("zoomData").collection("schedules");
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
       const user = req.body;
@@ -140,8 +137,6 @@ async function run() {
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
-
-<<<<<<< HEAD
     //zoom meeting
     app.get("/schedule", async (req, res) => {
       const query = {};
@@ -150,8 +145,6 @@ async function run() {
       res.send(schedules);
     });
 
-=======
->>>>>>> c7c6fffe75b2d4a461e680d0d91acd5a5369120e
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
@@ -189,16 +182,16 @@ async function run() {
     });
 
     // S user - update event api
-    app.patch('/update/event/:id', async (req, res) => {
+    app.patch("/update/event/:id", async (req, res) => {
       const id = req.params.id;
       const updatedData = req.body;
-      const filter = { _id: ObjectId(id)};
+      const filter = { _id: ObjectId(id) };
       const updateDoc = {
-          $set: updatedData,
+        $set: updatedData,
       };
-      const result = await eventCollection.updateOne(filter, updateDoc)
+      const result = await eventCollection.updateOne(filter, updateDoc);
       res.send(result);
-  })
+    });
 
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
@@ -212,10 +205,8 @@ async function run() {
       const query = { _id: ObjectId(id) };
       console.log(query);
       const result = await invitationEventCollection.findOne(query);
-<<<<<<< HEAD
       console.log(result);
-=======
-      res.send(result)
+      res.send(result);
     });
     // Scheduled Events - get Upcoming events api
     app.get("/event/group/:email", async (req, res) => {
@@ -286,7 +277,6 @@ async function run() {
       const email = req.params.email;
       const query = { email: email };
       const result = await invitationEventCollection.find(query).toArray();
->>>>>>> c7c6fffe75b2d4a461e680d0d91acd5a5369120e
       res.send(result);
     });
 
