@@ -44,14 +44,6 @@ function verifyJWT(req, res, next) {
   });
 }
 
-// confirmation email
-var emailSenderOptions = {
-  auth: {
-    api_key: `${process.env.EMAIL_SENDER_KEY}`,
-  },
-};
-const EmailClient = nodemailer.createTransport(sgTransport(emailSenderOptions));
-
 function SendConfirmEmail(newEvent) {
   const { eventName, userEmail, eventDate, eventTime } = newEvent;
   var email = {
@@ -88,7 +80,10 @@ async function run() {
     const invitationEventCollection = client
       .db("invitationEvent")
       .collection("invitation");
+<<<<<<< HEAD
     const zoomCollection = client.db("zoomData").collection("schedules");
+=======
+>>>>>>> c7c6fffe75b2d4a461e680d0d91acd5a5369120e
 
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
@@ -107,6 +102,37 @@ async function run() {
       res.send(newUsers);
     });
 
+    // app.get('/admin/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const user = await userCollection.findOne({ email: email });
+    //   const isAdmin = user.role === 'admin';
+    //   res.send({ admin: isAdmin })
+    // })
+
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
+    });
+
+    //user schedule
+    app.get("/userSchedule", async (req, res) => {
+      const userSchedule = await eventCollection.find().toArray();
+      res.send(userSchedule);
+    });
+
     // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
@@ -115,6 +141,7 @@ async function run() {
       res.send(result);
     });
 
+<<<<<<< HEAD
     //zoom meeting
     app.get("/schedule", async (req, res) => {
       const query = {};
@@ -123,18 +150,23 @@ async function run() {
       res.send(schedules);
     });
 
+=======
+>>>>>>> c7c6fffe75b2d4a461e680d0d91acd5a5369120e
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
+      console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
-      console.log("email sent");
       res.send(result);
     });
+
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
+      // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
+      SendConfirmEmail(newEvent);
       res.send(result);
     });
     // S user - get events api
@@ -147,6 +179,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
+
     // S user - get event api
     app.get("/event/single/:id", async (req, res) => {
       const id = req.params.id;
@@ -154,6 +187,19 @@ async function run() {
       const result = await eventCollection.findOne(query);
       res.send(result);
     });
+
+    // S user - update event api
+    app.patch('/update/event/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const filter = { _id: ObjectId(id)};
+      const updateDoc = {
+          $set: updatedData,
+      };
+      const result = await eventCollection.updateOne(filter, updateDoc)
+      res.send(result);
+  })
+
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
@@ -166,7 +212,20 @@ async function run() {
       const query = { _id: ObjectId(id) };
       console.log(query);
       const result = await invitationEventCollection.findOne(query);
+<<<<<<< HEAD
       console.log(result);
+=======
+      res.send(result)
+    });
+    // Scheduled Events - get Upcoming events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+
       res.send(result);
     });
 
@@ -175,6 +234,74 @@ async function run() {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    // S user - get events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+
+      res.send(result);
+    });
+
+    // get data for notification
+    app.get("/event/invitation/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { emails: email };
+      const result = await invitationEventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(result);
+    });
+
+    // S user - post invitation invitationEventCollection
+    app.post("/event/invitation", async (req, res) => {
+      const invitation = req.body;
+      console.log(invitation?.emails);
+      const result = await invitationEventCollection.insertOne(invitation);
+      SendGuestEmail(
+        invitation?.finalData.userEvent,
+        invitation?.emails,
+        invitation?.finalData?.inviteTime
+      );
+      res.send(result);
+    });
+    //  // S user - get invitation invitationEventCollection
+    app.get("/event/invitation/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await invitationEventCollection.findOne(query);
+      console.log(query);
+      res.send(result);
+    });
+
+    // All User-get invitation invitationEventCollection
+
+    app.get("/event/invited/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await invitationEventCollection.find(query).toArray();
+>>>>>>> c7c6fffe75b2d4a461e680d0d91acd5a5369120e
+      res.send(result);
+    });
+
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+    // S user - get event api
+    app.get("/event/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
 
@@ -205,15 +332,17 @@ async function run() {
     //------------ / --------------
 
     // Payment
+
     app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const totalPrice = service.totalPrice;
-      const amount = totalPrice * 100;
+      const { amount } = req.body;
+
+      const total = amount * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount: total,
         currency: "usd",
         payment_method_types: ["card"],
       });
+
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
@@ -255,73 +384,99 @@ app.listen(port, () => {
   console.log("EasySchedule app is listening on port", port);
 });
 
-// front end server api
-
-/* 
-// GET ALL USERS API From Client Side
-useEffect(() => {
-    fetch("http://localhost:5000/users")
-      .then((res) => res.json())
-      .then((data) => setGet(data));
-  },[]);
-
-
-      // Post data
-
-      fetch("http://localhost:5000/users", {
-      method: "POST", or PUT
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(allData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        // const newData = [...get, data];
-        // setGet(newData);
-        console.log(data);
-        alert("user added successfully");
-        e.target.reset()
-      });
-
-     // DELETE API From Client Side
-
-      const handleDelete = (id) => {
-    console.log("i got your id", id);
-    fetch(`http://localhost:5000/users/${id}`, {
-      method: "DELETE",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.deletedCount > 0) {
-          const remaining = users.filter((user) => user._id !== id);
-          setUsers(remaining);
-          console.log(data);
-        }
-      });
+// nodemailer for user
+function SendConfirmEmail(newEvent) {
+  const {
+    eventName,
+    userName,
+    userEmail,
+    eventDate,
+    eventTime,
+    eventDuration,
+    description,
+    location,
+  } = newEvent;
+  const msg = {
+    from: "aatozz99@gmail.com",
+    to: "jabedhtusar@gmail.com",
+    subject: "Meeting Schedule",
+    text: "Meeting Schedule",
+    html: ` <h3> Hi ${userName} </h3>
+    <p>
+    We hope you’re doing well. You have created a meeting to discuss <b> ${eventName} </b>.
+    Hope you will enjoy your meeting time and it looks like <b> ${eventDate} </b> 
+    at <b> ${eventTime} </b>. Meeting at/on <b> ${location} </b>.
+    </p>
+    
+    Kind regards, 
+    <br>
+    Easy Schedule
+    </p>`,
   };
-
-// update API from client side
-
-  const handleForm = (e) => {
-    e.preventDefault();
-    const name = e.target.name.value;
-    const ages = e.target.ages.value;
-    const address = e.target.address.value;
-    console.log(name, ages, address);
-    const allData = { name, ages, address };
-    fetch(`http://localhost:5000/users/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
+  nodemailer
+    .createTransport({
+      service: "gmail",
+      auth: {
+        user: "aatozz99@gmail.com",
+        pass: "olbozzxqlqxdngvy",
       },
-      body: JSON.stringify(allData),
     })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        alert("user added successfully");
-        e.target.reset();
-      });
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("error ".err);
+      } else {
+        return console.log("email sent");
+      }
+    });
+}
+
+// nodemailer for guest
+function SendGuestEmail(invitation, emails, newInviteTime) {
+  const {
+    eventName,
+    userName,
+    userEmail,
+    eventDate,
+    eventTime,
+    eventDuration,
+    description,
+    location,
+  } = invitation;
+  const msg = {
+    from: "aatozz99@gmail.com",
+    to: `${emails}`,
+    subject: "Meeting Schedule",
+    text: "Meeting Schedule",
+    html: ` <h3> Hi there </h3>
+    <p>
+    I hope you’re doing well. It’s time for us to meet to discuss <b> ${eventName} </b>.
+    I looked at everyone’s availability on Easy Schedule, and it looks like <b> ${eventDate} </b> 
+    at <b> ${newInviteTime} </b> will work best for everyone. 
+    Let’s meet at/on <b> ${location} </b>.
+    </p>
+    <p>
+    We’ll need about ${eventDuration} min. In that time, we should be able to cover:
+    Please use <a href='https://easy-schedule-77cce.web.app/'>this link</a> to let me know whether you’ll be able to make it. 
+    I look forward to seeing you all.
+    <br>
+    Kind regards, 
+    <br>
+    ${userName},
+    </p>`,
   };
-*/
+  nodemailer
+    .createTransport({
+      service: "gmail",
+      auth: {
+        user: "aatozz99@gmail.com",
+        pass: "olbozzxqlqxdngvy",
+      },
+    })
+    .sendMail(msg, (err) => {
+      if (err) {
+        return console.log("error ".err);
+      } else {
+        return console.log("email sent");
+      }
+    });
+}
