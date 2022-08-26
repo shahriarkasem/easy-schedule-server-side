@@ -4,6 +4,8 @@ const server = require("http").createServer(app);
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+var moment = require('moment');
+moment().format();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
 
@@ -70,6 +72,15 @@ async function run() {
       res.send({ accessToken });
     })
 
+    let check = moment('2010-10-20').isSameOrAfter('2010-10-19');
+    if (check = true) {
+      console.log('amaro porane jaha chay tumi tai tumi taigo amaro porane jaha chay');
+    }
+    else {
+      console.log('kicchu thik nai sob ulta palta hoiya gechega');
+    }
+    console.log(check);
+
     // get all users
     app.get("/users", async (req, res) => {
       const query = {};
@@ -85,23 +96,7 @@ async function run() {
       res.send({ admin: isAdmin })
     })
 
-    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
-      const email = req.params.email;
-      const requester = req.decoded.email;
-      const requesterAccount = await userCollection.findOne({ email: requester });
-      if (requesterAccount.role === 'admin') {
-        const filter = { email: email };
-        const updateDoc = {
-          $set: { role: 'admin' },
-        };
-        const result = await userCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      }
-      else {
-        res.status(403).send({ message: 'forbidden' });
-      }
 
-    });
 
     // post user
     app.post("/users", async (req, res) => {
@@ -189,11 +184,14 @@ async function run() {
       res.send(result);
     });
 
-    // All User-get invitation invitationEventCollection
+    // Upcoming Events-get invitation invitationEventCollection
 
     app.get("/event/invited/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email };
+      const gest = 'check@gmail.com';
+      const dat = "2022-08-10";
+      const query = { userEmail: email };
+
       const result = await invitationEventCollection.find(query).toArray();
       res.send(result);
     })
