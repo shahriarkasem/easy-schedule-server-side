@@ -4,7 +4,7 @@ const server = require("http").createServer(app);
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-var moment = require('moment');
+var moment = require("moment");
 moment().format();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
@@ -79,7 +79,11 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
-    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
+    const invitationEventCollection = client
+      .db("invitationEvent")
+      .collection("invitation");
+
+    const zoomCollection = client.db("zoomData").collection("schedules");
 
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
@@ -90,12 +94,13 @@ async function run() {
       res.send({ accessToken });
     });
 
-    let check = moment('2010-10-20').isSameOrAfter('2010-10-19');
-    if (check = true) {
-      console.log('amaro porane jaha chay tumi tai tumi taigo amaro porane jaha chay');
-    }
-    else {
-      console.log('kicchu thik nai sob ulta palta hoiya gechega');
+    let check = moment("2010-10-20").isSameOrAfter("2010-10-19");
+    if ((check = true)) {
+      console.log(
+        "amaro porane jaha chay tumi tai tumi taigo amaro porane jaha chay"
+      );
+    } else {
+      console.log("kicchu thik nai sob ulta palta hoiya gechega");
     }
     console.log(check);
 
@@ -114,7 +119,7 @@ async function run() {
     //   res.send({ admin: isAdmin })
     // })
 
-    app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({
@@ -137,7 +142,6 @@ async function run() {
       const userSchedule = await eventCollection.find().toArray();
       res.send(userSchedule);
     });
-
 
     // post user
     app.post("/users", async (req, res) => {
@@ -284,7 +288,7 @@ async function run() {
 
     app.get("/event/invited/:email", async (req, res) => {
       const email = req.params.email;
-      const gest = 'check@gmail.com';
+      const gest = "check@gmail.com";
       const dat = "2022-08-10";
       const query = { userEmail: email };
 
@@ -351,6 +355,14 @@ async function run() {
     });
 
     //------------ / --------------
+
+    //zoom meeting
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      const cursor = zoomCollection.find(query);
+      const schedules = await cursor.toArray();
+      res.send(schedules);
+    });
   } finally {
   }
 }
