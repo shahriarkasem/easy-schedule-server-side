@@ -58,6 +58,7 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
+    const workflowCollection = client.db("workflows").collection("workflow");
     const invitationEventCollection = client
       .db("invitationEvent")
       .collection("invitation");
