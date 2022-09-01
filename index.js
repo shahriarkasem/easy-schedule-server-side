@@ -65,6 +65,7 @@ async function run() {
     const invitationEventCollection = client
       .db("invitationEvent")
       .collection("invitation");
+    const zoomCollection = client.db("zoomData").collection("schedules");
 
     //AUTH(JWT)
     //VerifyJWT
@@ -129,14 +130,6 @@ async function run() {
       console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result);
-    });
-
-    //zoom meeting
-    app.get("/schedule", async (req, res) => {
-      const query = {};
-      const cursor = zoomCollection.find(query);
-      const schedules = await cursor.toArray();
-      res.send(schedules);
     });
 
     // S user - create a new OneOnOne event api
@@ -327,6 +320,21 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const result = await userCollection.deleteOne(query);
       res.send(result);
+    });
+    //zoom meeting
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      const cursor = zoomCollection.find(query);
+      const schedules = await cursor.toArray();
+      res.send(schedules);
+    });
+    //zoom post api
+    app.post("/addSchedule", async (req, res) => {
+      const schedule = req.body;
+      console.log("hit the post api", schedule);
+      const result = await zoomCollection.insertOne(schedule);
+      console.log(result);
+      res.json(result);
     });
 
     //------------ / --------------
