@@ -27,8 +27,6 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
-
-
 // mongoDB user information
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -52,7 +50,7 @@ function verifyJWT(req, res, next) {
     console.log("decoded", decoded);
     req.decoded = decoded;
     next();
-  })
+  });
 }
 
 // connect with database
@@ -61,18 +59,22 @@ async function run() {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
-    const invitationEventCollection = client.db("invitationEvent").collection("invitation");
+    const invitationEventCollection = client
+      .db("invitationEvent")
+      .collection("invitation");
     const userDataCollection = client.db("editUserData").collection("editUser");
+    const zoomCollection = client.db("zoomData").collection("schedules");
 
     //verify admin
     async function verifyAdmin(req, res, next) {
       const requester = req.decoded.email;
-      const requesterAccount = await userCollection.findOne({ email: requester });
-      if (requesterAccount.role === 'admin') {
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
         next();
-      }
-      else {
-        res.status(403).send({ message: 'forbidden' });
+      } else {
+        res.status(403).send({ message: "forbidden" });
       }
     }
 
@@ -83,7 +85,7 @@ async function run() {
         expiresIn: "1d",
       });
       res.send({ accessToken });
-    })
+    });
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -97,32 +99,32 @@ async function run() {
     //   const user = await userCollection.findOne({ email: email });
     //   res.send(user)
     // })
-    app.get('/admin/:email', async (req, res) => {
+    app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
-      const isAdmin = user.role === 'admin';
-      res.send({ admin: isAdmin })
-    })
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
+    });
     //make user an admin
-    app.put('/users/admin/:email', async (req, res) => {
+    app.put("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const updateDoc = {
-        $set: { role: 'admin' },
+        $set: { role: "admin" },
       };
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.put('/users/remove/admin/:email', async (req, res) => {
+    app.put("/users/remove/admin/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const updateDoc = {
-        $set: { role: ' ' },
+        $set: { role: " " },
       };
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.put('/users/:email', async (req, res) => {
+    app.put("/users/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
       const filter = { email: email };
@@ -130,8 +132,16 @@ async function run() {
       const updateDoc = {
         $set: user,
       };
-      const result = await userDataCollection.updateOne(filter, updateDoc, options);
-      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+      const result = await userDataCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      const token = jwt.sign(
+        { email: email },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "1h" }
+      );
       res.send({ result, token });
     });
 
@@ -142,11 +152,11 @@ async function run() {
       const userData = await users.toArray();
       res.send(userData);
     });
-    app.post('/userData', async (req, res) => {
+    app.post("/userData", async (req, res) => {
       const user = req.body;
       const result = await userDataCollection.insertOne(user);
       res.send(result);
-    })
+    });
     // app.put("/userData/:id", async (req, res) => {
     //   const id = req.params.id;
     //   const updatedUser = req.body;
@@ -165,7 +175,6 @@ async function run() {
     //   res.send(result);
     // });
 
-
     // app.get('/admin/:email', async (req, res) => {
     //   const email = req.params.userEmail;
     //   const user = await userCollection.findOne({ userEmail: email });
@@ -173,11 +182,8 @@ async function run() {
     //   res.send({ admin: isAdmin })
     // })
 
-
-
-
     //user schedule
-    app.get('/userSchedule', async (req, res) => {
+    app.get("/userSchedule", async (req, res) => {
       const userSchedule = await eventCollection.find().toArray();
       res.send(userSchedule);
     });
@@ -193,38 +199,42 @@ async function run() {
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollectionOneOnOne.insertOne(newEvent);
-      res.send(result)
-    })
+      res.send(result);
+    });
     // S user - create a new group event api
     app.post("/event/create/group", async (req, res) => {
       const newEvent = req.body;
       const result = await eventCollection.insertOne(newEvent);
-      res.send(result)
-    })
+      res.send(result);
+    });
     // S user - get events api
-    app.get('/event/group/:email', async (req, res) => {
+    app.get("/event/group/:email", async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
-      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
-      res.send(result)
-    })
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(result);
+    });
 
     // S user - get event api
     app.get("/event/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await eventCollection
-        .findOne(query)
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
     // Scheduled Events - get Upcoming events api
-    app.get('/event/group/:email', async (req, res) => {
+    app.get("/event/group/:email", async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
-      const result = await eventCollection.find(query).sort({ _id: -1 }).toArray();
-      res.send(result)
-    })
-
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+      res.send(result);
+    });
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
@@ -248,8 +258,7 @@ async function run() {
     app.get("/event/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await eventCollection
-        .findOne(query)
+      const result = await eventCollection.findOne(query);
       res.send(result);
     });
     // S user - post invitation invitationEventCollection
@@ -262,9 +271,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      console.log(query)
+      console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      console.log(result)
+      console.log(result);
       res.send(result);
     });
 
@@ -275,7 +284,7 @@ async function run() {
       const query = { email: email };
       const result = await invitationEventCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
     // find specific user by user's id
     app.get("/users/:id", async (req, res) => {
@@ -301,12 +310,12 @@ async function run() {
       res.send(result);
     });
     //to find single user
-    app.get('/users/:id', async (req, res) => {
+    app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const inventory = await userCollection.findOne(query);
       res.send(inventory);
-    })
+    });
 
     // delete user
     app.delete("/users/:id", async (req, res) => {
@@ -333,6 +342,21 @@ async function run() {
       });
     });
 
+    //zoom meeting
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      const cursor = zoomCollection.find(query);
+      const schedules = await cursor.toArray();
+      res.send(schedules);
+    });
+    //zoom post api
+    app.post("/addSchedule", async (req, res) => {
+      const schedule = req.body;
+      console.log("hit the post api", schedule);
+      const result = await zoomCollection.insertOne(schedule);
+      console.log(result);
+      res.json(result);
+    });
     //------------ / --------------
   } finally {
   }
