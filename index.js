@@ -127,7 +127,7 @@ async function run() {
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.put('/users/:email', async (req, res) => {
+    app.put("/users/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
       const filter = { email: email };
@@ -136,11 +136,15 @@ async function run() {
         $set: user,
       };
       const result = await userCollection.updateOne(filter, updateDoc, options);
-      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
+      const token = jwt.sign(
+        { email: email },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "365d" }
+      );
       res.send({ result, token });
     });
 
-    app.get('/users/:email', async (req, res) => {
+    app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       // console.log("accountsetting:", email);
       const user = await userCollection.findOne({ email: email });
@@ -160,11 +164,15 @@ async function run() {
           ages: updatedUser.email,
           number: updatedUser.number,
           address: updatedUser.address,
-          description: updatedUser.description
+          description: updatedUser.description,
         },
       };
       // console.log("hello", updatedDoc)
-      const result = await userCollection.updateOne(filter, updatedDoc, options);
+      const result = await userCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
       res.send(result);
     });
 
@@ -280,9 +288,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      console.log(query);
+      // console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      console.log(result);
+      // console.log(result);
       res.send(result);
     });
     // Scheduled Events - get Upcoming events api
@@ -330,7 +338,7 @@ async function run() {
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
-      console.log(invitation);
+      // console.log(invitation);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
         invitation?.userEvent,
@@ -343,9 +351,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      console.log(query);
+      // console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      console.log(result);
+      // console.log(result);
       res.send(result);
     });
 
@@ -432,9 +440,9 @@ async function run() {
     //zoom post api
     app.post("/addSchedule", async (req, res) => {
       const schedule = req.body;
-      console.log("hit the post api", schedule);
+      // console.log("hit the post api", schedule);
       const result = await zoomCollection.insertOne(schedule);
-      console.log(result);
+      // console.log(result);
       res.json(result);
     });
     //------------ / --------------
