@@ -4,11 +4,10 @@ const server = require("http").createServer(app);
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-var moment = require('moment');
-moment().format();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
-
+var moment = require('moment'); // require
+moment().format();
 var nodemailer = require("nodemailer");
 var sgTransport = require("nodemailer-sendgrid-transport");
 
@@ -29,6 +28,15 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
+// mongoDB user information
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
+
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
+});
+
 //VerifyJWT
 function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -45,45 +53,32 @@ function verifyJWT(req, res, next) {
     next();
   });
 }
-
-function SendConfirmEmail(newEvent) {
-  const { eventName, userEmail, eventDate, eventTime } = newEvent;
-  var email = {
-    from: "Easyschedule1@outlook.com",
-    to: userEmail,
-    subject: eventName,
-    text: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventTime} `,
-    html: `Hey there, you have good news! you have a meeting with ${userEmail}, time ${eventTime}, date ${eventDate} `,
-  };
-  EmailClient.sendMail(email, function (err, info) {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log("Message sent: ", info);
-    }
-  });
-}
-
-// mongoDB user information
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bvzmv.mongodb.net/?retryWrites=true&w=majority`;
-
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverApi: ServerApiVersion.v1,
-});
-
 // connect with database
 async function run() {
   try {
     await client.connect();
     const userCollection = client.db("userData").collection("users");
     const eventCollection = client.db("eventData").collection("events");
+    const workflowCollection = client.db("workflows").collection("workflow");
     const invitationEventCollection = client
       .db("invitationEvent")
       .collection("invitation");
-
+    const userDataCollection = client.db("editUserData").collection("editUser");
     const zoomCollection = client.db("zoomData").collection("schedules");
+
+    //verify admin
+    async function verifyAdmin(req, res, next) {
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        next();
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
+    }
+
     //AUTH(JWT)
     app.post("/login", async (req, res) => {
       const user = req.body;
@@ -92,6 +87,7 @@ async function run() {
       });
       res.send({ accessToken });
     });
+
     let cccc = moment().format("YYYY-MM-DD");
     let check = moment("2022-09-01").isBefore(cccc);
     if (check = true) {
@@ -101,6 +97,7 @@ async function run() {
       console.log('display show past events');
     }
     console.log(check);
+
 
 
     // get all users
@@ -117,26 +114,71 @@ async function run() {
     //   const isAdmin = user.role === 'admin';
     //   res.send({ admin: isAdmin })
     // })
-
-
-
-
-    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+    app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
-      const requester = req.decoded.email;
-      const requesterAccount = await userCollection.findOne({
-        email: requester,
-      });
-      if (requesterAccount.role === "admin") {
-        const filter = { email: email };
-        const updateDoc = {
-          $set: { role: "admin" },
-        };
-        const result = await userCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      } else {
-        res.status(403).send({ message: "forbidden" });
-      }
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
+    });
+    //make user an admin
+    app.put("/users/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.put("/users/remove/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: " " },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    app.put('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
+      res.send({ result, token });
+    });
+
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      // console.log("accountsetting:", email);
+      const user = await userCollection.findOne({ email: email });
+      // console.log(user);
+      res.send(user);
+    });
+    app.patch("/users/:email", async (req, res) => {
+      const updatedUser = req.body;
+      // console.log("Hi", updatedUser);
+      const email = req.params.email;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          img: updatedUser.img,
+          name: updatedUser.name,
+          ages: updatedUser.email,
+          number: updatedUser.number,
+          address: updatedUser.address,
+          description: updatedUser.description
+        },
+      };
+      // console.log("hello", updatedDoc)
+      const result = await userCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
     });
 
     //user schedule
@@ -145,20 +187,19 @@ async function run() {
       res.send(userSchedule);
     });
 
-
+    //user data
+    app.get("/userData", async (req, res) => {
+      const query = {};
+      const users = userDataCollection.find(query);
+      const userData = await users.toArray();
+      res.send(userData);
+    });
     // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
       console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result);
-    });
-    //zoom meeting
-    app.get("/schedule", async (req, res) => {
-      const query = {};
-      const cursor = zoomCollection.find(query);
-      const schedules = await cursor.toArray();
-      res.send(schedules);
     });
 
     // S user - create a new OneOnOne event api
@@ -176,6 +217,7 @@ async function run() {
       // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
+      console.log(newEvent);
       res.send(result);
     });
     // S user - get events api
@@ -196,7 +238,6 @@ async function run() {
       const result = await eventCollection.findOne(query);
       res.send(result);
     });
-
     // S user - update event api
     app.patch("/update/event/:id", async (req, res) => {
       const id = req.params.id;
@@ -208,13 +249,46 @@ async function run() {
       const result = await eventCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-
-    // S user - post invitation invitationEventCollection
-    app.post("/event/invitation", async (req, res) => {
-      const invitation = req.body;
-      const result = await invitationEventCollection.insertOne(invitation);
+    // Scheduled Events - get Upcoming events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
       res.send(result);
     });
+    // find specific user by user's id
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const inventory = await userCollection.findOne(query);
+      res.send(inventory);
+    });
+    // S user - get events api
+    app.get("/event/group/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email };
+      const result = await eventCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .toArray();
+
+      res.send(result);
+    });
+    // S user - post invitation invitationEventCollection
+    // app.post("/event/invitation", async (req, res) => {
+    //   const invitation = req.body;
+    //   const result = await invitationEventCollection.insertOne(invitation);
+    //   SendGuestEmail(
+    //     invitation?.finalData.userEvent,
+    //     invitation?.emails,
+    //     invitation?.finalData?.inviteTime
+    //   );
+    //   res.send(result);
+    // });
+
     //  // S user - get invitation invitationEventCollection
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
@@ -269,12 +343,12 @@ async function run() {
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
-      console.log(invitation?.emails);
+      console.log(invitation);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
-        invitation?.finalData.userEvent,
+        invitation?.userEvent,
         invitation?.emails,
-        invitation?.finalData?.inviteTime
+        invitation?.inviteTime
       );
       res.send(result);
     });
@@ -282,8 +356,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      const result = await invitationEventCollection.findOne(query);
       console.log(query);
+      const result = await invitationEventCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -294,8 +369,7 @@ async function run() {
       const gest = 'check@gmail.com';
       const myDate = moment().format("YYYY-MM-D");
       let last;
-      const query = { userEmail: email, eventDate: moment(myDate).isBefore(eventDate) };
-
+      const query = { userEmail: email };
       const result = await eventCollection.find(query).toArray();
       // last = moment(myDate).isBefore(result.eventDate);
       res.send(result);
@@ -332,6 +406,13 @@ async function run() {
       res.send(result);
     });
 
+    // workflow
+    app.get("/workflow", async (req, res) => {
+      const query = {};
+      const users = workflowCollection.find(query);
+      const newUsers = await users.toArray();
+      res.send(newUsers);
+    });
     // delete user
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
@@ -343,22 +424,35 @@ async function run() {
     //------------ / --------------
 
     // Payment
-
     app.post("/create-payment-intent", async (req, res) => {
-      const { amount } = req.body;
-
-      const total = amount * 100;
+      const service = req.body;
+      const totalPrice = service.totalPrice;
+      const amount = totalPrice * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: total,
+        amount: amount,
         currency: "usd",
         payment_method_types: ["card"],
       });
-
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
     });
 
+    //zoom meeting
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      const cursor = zoomCollection.find(query);
+      const schedules = await cursor.toArray();
+      res.send(schedules);
+    });
+    //zoom post api
+    app.post("/addSchedule", async (req, res) => {
+      const schedule = req.body;
+      console.log("hit the post api", schedule);
+      const result = await zoomCollection.insertOne(schedule);
+      console.log(result);
+      res.json(result);
+    });
     //------------ / --------------
   } finally {
   }
@@ -409,7 +503,7 @@ function SendConfirmEmail(newEvent) {
   } = newEvent;
   const msg = {
     from: "aatozz99@gmail.com",
-    to: "jabedhtusar@gmail.com",
+    to: `${newEvent?.userEmail}`,
     subject: "Meeting Schedule",
     text: "Meeting Schedule",
     html: ` <h3> Hi ${userName} </h3>
