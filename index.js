@@ -37,21 +37,21 @@ const client = new MongoClient(uri, {
 });
 
 //VerifyJWT
-function verifyJWT(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).send({ message: "unauthorized access" });
-  }
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(403).send({ message: "Forbidden access" });
-    }
-    console.log("decoded", decoded);
-    req.decoded = decoded;
-    next();
-  });
-}
+// function verifyJWT(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) {
+//     return res.status(401).send({ message: "unauthorized access" });
+//   }
+//   const token = authHeader.split(" ")[1];
+//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+//     if (err) {
+//       return res.status(403).send({ message: "Forbidden access" });
+//     }
+//     console.log("decoded", decoded);
+//     req.decoded = decoded;
+//     next();
+//   });
+// }
 // connect with database
 async function run() {
   try {
@@ -388,14 +388,15 @@ async function run() {
 
     // Payment
     app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const totalPrice = service.totalPrice;
-      const amount = totalPrice * 100;
+      const { amount } = req.body;
+
+      const total = amount * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount: total,
         currency: "usd",
         payment_method_types: ["card"],
       });
+
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
