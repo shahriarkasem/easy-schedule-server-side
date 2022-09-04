@@ -92,15 +92,16 @@ async function run() {
       });
       res.send({ accessToken });
     });
-
-    let check = moment('2010-10-20').isSameOrAfter('2010-10-19');
+    let cccc = moment().format("YYYY-MM-DD");
+    let check = moment("2022-09-01").isBefore(cccc);
     if (check = true) {
-      console.log('amaro porane jaha chay tumi tai tumi taigo amaro porane jaha chay');
+      console.log('display show upcoming events');
     }
     else {
-      console.log('kicchu thik nai sob ulta palta hoiya gechega');
+      console.log('display show past events');
     }
     console.log(check);
+
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -291,10 +292,12 @@ async function run() {
     app.get("/event/invited/:email", async (req, res) => {
       const email = req.params.email;
       const gest = 'check@gmail.com';
-      const dat = "2022-08-10";
-      const query = { userEmail: email };
+      const myDate = moment().format("YYYY-MM-D");
+      let last;
+      const query = { userEmail: email, eventDate: moment(myDate).isBefore(eventDate) };
 
       const result = await eventCollection.find(query).toArray();
+      // last = moment(myDate).isBefore(result.eventDate);
       res.send(result);
     });
 
