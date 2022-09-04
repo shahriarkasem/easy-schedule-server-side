@@ -127,7 +127,7 @@ async function run() {
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.put("/users/:email", async (req, res) => {
+    app.put('/users/:email', async (req, res) => {
       const email = req.params.email;
       const user = req.body;
       const filter = { email: email };
@@ -135,17 +135,37 @@ async function run() {
       const updateDoc = {
         $set: user,
       };
-      const result = await userDataCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
-      const token = jwt.sign(
-        { email: email },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1h" }
-      );
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
       res.send({ result, token });
+    });
+
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      // console.log("accountsetting:", email);
+      const user = await userCollection.findOne({ email: email });
+      // console.log(user);
+      res.send(user);
+    });
+    app.patch("/users/:email", async (req, res) => {
+      const updatedUser = req.body;
+      // console.log("Hi", updatedUser);
+      const email = req.params.email;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          img: updatedUser.img,
+          name: updatedUser.name,
+          ages: updatedUser.email,
+          number: updatedUser.number,
+          address: updatedUser.address,
+          description: updatedUser.description
+        },
+      };
+      // console.log("hello", updatedDoc)
+      const result = await userCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
     });
 
     //user schedule
