@@ -6,7 +6,8 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const ObjectId = require("mongodb").ObjectId;
-
+var moment = require('moment'); // require
+moment().format();
 var nodemailer = require("nodemailer");
 var sgTransport = require("nodemailer-sendgrid-transport");
 
@@ -86,6 +87,18 @@ async function run() {
       });
       res.send({ accessToken });
     });
+
+    let cccc = moment().format("YYYY-MM-DD");
+    let check = moment("2022-09-01").isBefore(cccc);
+    if (check = true) {
+      console.log('display show upcoming events');
+    }
+    else {
+      console.log('display show past events');
+    }
+    console.log(check);
+
+
 
     // get all users
     app.get("/users", async (req, res) => {
@@ -361,8 +374,12 @@ async function run() {
 
     app.get("/event/invited/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email };
-      const result = await invitationEventCollection.find(query).toArray();
+      const gest = 'check@gmail.com';
+      const myDate = moment().format("YYYY-MM-D");
+      let last;
+      const query = { userEmail: email };
+      const result = await eventCollection.find(query).toArray();
+      // last = moment(myDate).isBefore(result.eventDate);
       res.send(result);
     });
 
