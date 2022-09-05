@@ -192,7 +192,7 @@ async function run() {
     // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
-      console.log("adding new user", newUser);
+      // console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
@@ -200,7 +200,7 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
-      console.log(newEvent);
+      // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       res.send(result);
@@ -212,7 +212,7 @@ async function run() {
       // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
-      console.log(newEvent);
+      // console.log(newEvent);
       res.send(result);
     });
     // S user - get events api
