@@ -37,22 +37,21 @@ const client = new MongoClient(uri, {
 });
 
 //VerifyJWT
-// function verifyJWT(req, res, next) {
-//   const authHeader = req.headers.authorization;
-//   if (!authHeader) {
-//     return res.status(401).send({ message: "unauthorized access" });
-//   }
-//   const token = authHeader.split(" ")[1];
-//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-//     if (err) {
-//       return res.status(403).send({ message: "Forbidden access" });
-//     }
-//     console.log("decoded", decoded);
-//     req.decoded = decoded;
-//     next();
-//   });
-// }
-
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    console.log("decoded", decoded);
+    req.decoded = decoded;
+    next();
+  });
+}
 // connect with database
 async function run() {
   try {
@@ -136,45 +135,17 @@ async function run() {
       const updateDoc = {
         $set: user,
       };
-      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const result = await userDataCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       const token = jwt.sign(
         { email: email },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "365d" }
+        { expiresIn: "1h" }
       );
       res.send({ result, token });
-    });
-
-    app.get("/users/:email", async (req, res) => {
-      const email = req.params.email;
-      // console.log("accountsetting:", email);
-      const user = await userCollection.findOne({ email: email });
-      // console.log(user);
-      res.send(user);
-    });
-    app.patch("/users/:email", async (req, res) => {
-      const updatedUser = req.body;
-      // console.log("Hi", updatedUser);
-      const email = req.params.email;
-      const filter = { email: email };
-      const options = { upsert: true };
-      const updatedDoc = {
-        $set: {
-          img: updatedUser.img,
-          name: updatedUser.name,
-          ages: updatedUser.email,
-          number: updatedUser.number,
-          address: updatedUser.address,
-          description: updatedUser.description,
-        },
-      };
-      // console.log("hello", updatedDoc)
-      const result = await userCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
-      );
-      res.send(result);
     });
 
     //user schedule
@@ -193,7 +164,7 @@ async function run() {
     // post user
     app.post("/users", async (req, res) => {
       const newUser = req.body;
-      // console.log("adding new user", newUser);
+      console.log("adding new user", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
@@ -201,7 +172,7 @@ async function run() {
     // S user - create a new OneOnOne event api
     app.post("/event/create/OneOnOne", async (req, res) => {
       const newEvent = req.body;
-      // console.log(newEvent);
+      console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
       res.send(result);
@@ -213,7 +184,7 @@ async function run() {
       // console.log(newEvent);
       const result = await eventCollection.insertOne(newEvent);
       SendConfirmEmail(newEvent);
-      // console.log(newEvent);
+      console.log(newEvent);
       res.send(result);
     });
     // S user - get events api
@@ -289,9 +260,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      // console.log(query);
+      console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      // console.log(result);
+      console.log(result);
       res.send(result);
     });
     // Scheduled Events - get Upcoming events api
@@ -339,7 +310,7 @@ async function run() {
     // S user - post invitation invitationEventCollection
     app.post("/event/invitation", async (req, res) => {
       const invitation = req.body;
-      // console.log(invitation);
+      console.log(invitation);
       const result = await invitationEventCollection.insertOne(invitation);
       SendGuestEmail(
         invitation?.userEvent,
@@ -352,9 +323,9 @@ async function run() {
     app.get("/event/invitation/single/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
-      // console.log(query);
+      console.log(query);
       const result = await invitationEventCollection.findOne(query);
-      // console.log(result);
+      console.log(result);
       res.send(result);
     });
 
@@ -417,15 +388,14 @@ async function run() {
 
     // Payment
     app.post("/create-payment-intent", async (req, res) => {
-      const { amount } = req.body;
-
-      const total = amount * 100;
+      const service = req.body;
+      const totalPrice = service.totalPrice;
+      const amount = totalPrice * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: total,
+        amount: amount,
         currency: "usd",
         payment_method_types: ["card"],
       });
-
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
@@ -441,9 +411,9 @@ async function run() {
     //zoom post api
     app.post("/addSchedule", async (req, res) => {
       const schedule = req.body;
-      // console.log("hit the post api", schedule);
+      console.log("hit the post api", schedule);
       const result = await zoomCollection.insertOne(schedule);
-      // console.log(result);
+      console.log(result);
       res.json(result);
     });
     //------------ / --------------
