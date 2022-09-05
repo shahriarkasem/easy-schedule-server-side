@@ -127,7 +127,7 @@ async function run() {
       const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.put('/users/:email', async (req, res) => {
+    app.put("/users/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
       const filter = { email: email };
@@ -136,11 +136,15 @@ async function run() {
         $set: user,
       };
       const result = await userCollection.updateOne(filter, updateDoc, options);
-      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
+      const token = jwt.sign(
+        { email: email },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "365d" }
+      );
       res.send({ result, token });
     });
 
-    app.get('/users/:email', async (req, res) => {
+    app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
       // console.log("accountsetting:", email);
       const user = await userCollection.findOne({ email: email });
@@ -160,11 +164,15 @@ async function run() {
           ages: updatedUser.email,
           number: updatedUser.number,
           address: updatedUser.address,
-          description: updatedUser.description
+          description: updatedUser.description,
         },
       };
       // console.log("hello", updatedDoc)
-      const result = await userCollection.updateOne(filter, updatedDoc, options);
+      const result = await userCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
       res.send(result);
     });
 
@@ -408,14 +416,15 @@ async function run() {
 
     // Payment
     app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const totalPrice = service.totalPrice;
-      const amount = totalPrice * 100;
+      const { amount } = req.body;
+
+      const total = amount * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount: total,
         currency: "usd",
         payment_method_types: ["card"],
       });
+
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
