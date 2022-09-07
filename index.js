@@ -101,12 +101,12 @@ async function run() {
     //   const isAdmin = user.role === "admin";
     //   res.send({ admin: isAdmin });
     // });
-    // app.get("/admin/:email", async (req, res) => {
-    //   const email = req.params.email;
-    //   const user = await userCollection.findOne({ email: email });
-    //   const isAdmin = user.role === "admin";
-    //   res.send({ admin: isAdmin });
-    // });
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user?.role === "admin";
+      res.send({ admin: isAdmin });
+    });
     //make user an admin
     app.put("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
