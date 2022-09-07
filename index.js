@@ -164,7 +164,7 @@ async function run() {
           ages: updatedUser.email,
           number: updatedUser.number,
           address: updatedUser.address,
-          description: updatedUser.description,
+          description: updatedUser,
         },
       };
       // console.log("hello", updatedDoc)
