@@ -95,16 +95,16 @@ async function run() {
       res.send(newUsers);
     });
 
-    // app.get('/admin/:email', async (req, res) => {
+    // app.get("/admin/:email", async (req, res) => {
     //   const email = req.params.email;
     //   const user = await userCollection.findOne({ email: email });
-    //   const isAdmin = user.role === 'admin';
-    //   res.send({ admin: isAdmin })
-    // })
+    //   const isAdmin = user.role === "admin";
+    //   res.send({ admin: isAdmin });
+    // });
     app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
       const user = await userCollection.findOne({ email: email });
-      const isAdmin = user.role === "admin";
+      const isAdmin = user?.role === "admin";
       res.send({ admin: isAdmin });
     });
     //make user an admin
@@ -135,17 +135,45 @@ async function run() {
       const updateDoc = {
         $set: user,
       };
-      const result = await userDataCollection.updateOne(
-        filter,
-        updateDoc,
-        options
-      );
+      const result = await userCollection.updateOne(filter, updateDoc, options);
       const token = jwt.sign(
         { email: email },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "365d" }
       );
       res.send({ result, token });
+    });
+
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log("accountsetting:", email);
+      const user = await userCollection.findOne({ email: email });
+      // console.log(user);
+      res.send(user);
+    });
+    app.patch("/users/:email", async (req, res) => {
+      const updatedUser = req.body;
+      // console.log("Hi", updatedUser);
+      const email = req.params.email;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          img: updatedUser.img,
+          name: updatedUser.name,
+          ages: updatedUser.email,
+          number: updatedUser.number,
+          address: updatedUser.address,
+          description: updatedUser,
+        },
+      };
+      // console.log("hello", updatedDoc)
+      const result = await userCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
     });
 
     //user schedule
@@ -388,14 +416,15 @@ async function run() {
 
     // Payment
     app.post("/create-payment-intent", async (req, res) => {
-      const service = req.body;
-      const totalPrice = service.totalPrice;
-      const amount = totalPrice * 100;
+      const { amount } = req.body;
+
+      const total = amount * 100;
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount: total,
         currency: "usd",
         payment_method_types: ["card"],
       });
+
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
